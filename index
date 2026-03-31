@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HUB 50/50 Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:#f5f5f5;color:#263746;min-height:100vh;}
+header{background:#263746;border-bottom:4px solid #f3b921;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:68px;position:sticky;top:0;z-index:100;}
+.logo{font-weight:900;font-size:22px;color:#fff;}
+.logo span{color:#f3b921;}
+.header-right{display:flex;align-items:center;gap:12px;}
+.badge{background:#f3b921;color:#263746;padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.container{max-width:1100px;margin:0 auto;padding:24px 16px;}
+.page{display:none;}.page.on{display:block;}
+/* cards */
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid #e3e3e3;}
+.card h2{font-size:1.1rem;font-weight:700;color:#263746;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #f3b921;}
+/* stats row */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
+.stat{background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid #e3e3e3;}
+.stat .val{font-size:1.8rem;font-weight:900;color:#263746;}
+.stat .val.gold{color:#f3b921;}
+.stat .val.green{color:#3ebd3e;}
+.stat .lbl{font-size:.75rem;color:#757584;margin-top:4px;text-transform:uppercase;letter-spacing:1px;}
+/* tabs */
+.tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.tab{padding:8px 18px;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:.9rem;transition:all .2s;}
+.tab.active{background:#263746;color:#fff;}
+.tab.inactive{background:#e3e3e3;color:#263746;}
+/* table */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.9rem;}
+th{background:#263746;color:#fff;padding:10px 12px;text-align:left;font-size:.8rem;letter-spacing:.5px;}
+td{padding:10px 12px;border-bottom:1px solid #f0f0f0;color:#263746;}
+tr:hover td{background:#fafafa;}
+/* forms */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group label{font-size:.8rem;font-weight:700;color:#263746;}
+.form-group input,.form-group select,.form-group textarea{padding:10px;border-radius:8px;border:1px solid #e3e3e3;font-size:.9rem;color:#263746;}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:#263746;}
+/* buttons */
+.btn{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:700;transition:all .2s;}
+.btn:hover{opacity:.85;}
+.btn-primary{background:#263746;color:#fff;}
+.btn-gold{background:#f3b921;color:#263746;}
+.btn-green{background:#3ebd3e;color:#fff;}
+.btn-red{background:#ac1534;color:#fff;}
+.btn-gray{background:#e3e3e3;color:#263746;}
+.btn-sm{padding:6px 12px;font-size:.8rem;}
+/* winner banner */
+.winner-banner{background:linear-gradient(135deg,#263746,#385263);border-radius:12px;padding:20px;color:#fff;text-align:center;margin-bottom:20px;border:2px solid #f3b921;}
+.winner-banner h3{color:#f3b921;font-size:1.2rem;margin-bottom:4px;}
+/* login */
+.login-wrap{max-width:360px;margin:60px auto;}
+.err{color:#ac1534;font-size:.85rem;margin-top:6px;}
+.quarter-selector{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
+.quarter-selector select{padding:8px 12px;border-radius:8px;border:1px solid #e3e3e3;font-size:.9rem;color:#263746;}
+.pill{padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;}
+.pill-gold{background:#fff3cd;color:#856404;}
+.pill-green{background:#d4edda;color:#155724;}
+.pill-blue{background:#cce5ff;color:#004085;}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <img src="https://raw.githubusercontent.com/samantharank/hub-bingo/main/hub-logo.png" alt="HUB" style="height:36px;width:auto;"/>
+    <div style="font-size:12px;font-weight:600;color:#e3e3e3;letter-spacing:2px;text-transform:uppercase;padding-left:14px;border-left:1px solid rgba(255,255,255,.2);">The HUB Social</div>
+  </div>
+  <div class="header-right">
+    <div class="badge">50/50 Tracker</div>
+    <div id="adminBadge" style="display:none;">
+      <span style="color:#f3b921;font-size:.8rem;font-weight:700;">Admin</span>
+      <button onclick="adminLogout()" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.75rem;margin-left:8px;">Log out</button>
+    </div>
+    <button id="adminLoginBtn" onclick="showLogin()" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem;">Admin Login</button>
+  </div>
+</header>
+
+<!-- LOGIN MODAL -->
+<div id="loginModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;">
+  <div class="card" style="max-width:340px;width:95%;">
+    <h2>Admin Login</h2>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Password</label>
+      <input type="password" id="adminPw" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')tryAdminLogin()"/>
+    </div>
+    <div id="loginErr" class="err"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn btn-primary" onclick="tryAdminLogin()">Login</button>
+      <button class="btn btn-gray" onclick="document.getElementById('loginModal').style.display='none'">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="container">
+
+  <!-- QUARTER SELECTOR -->
+  <div class="quarter-selector">
+    <label style="font-weight:700;font-size:.9rem;">Quarter:</label>
+    <select id="quarterSelect" onchange="loadQuarterData()">
+      <option value="Q1-2026">Q1 2026</option>
+      <option value="Q2-2026">Q2 2026</option>
+      <option value="Q3-2026">Q3 2026</option>
+      <option value="Q4-2026">Q4 2026</option>
+      <option value="Q1-2027">Q1 2027</option>
+      <option value="Q2-2027">Q2 2027</option>
+      <option value="Q3-2027">Q3 2027</option>
+      <option value="Q4-2027">Q4 2027</option>
+    </select>
+    <button class="btn btn-gray btn-sm" onclick="showPage('summary')">📊 Annual Summary</button>
+    <button class="btn btn-gray btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+  </div>
+
+  <!-- QUARTER VIEW -->
+  <div id="pageQuarter" class="page on">
+
+    <!-- Stats -->
+    <div class="stats" id="statsRow"></div>
+
+    <!-- Winner Banner -->
+    <div id="winnerBanner" style="display:none;" class="winner-banner">
+      <h3>🏆 Quarter Winner</h3>
+      <div id="winnerInfo" style="font-size:1.1rem;"></div>
+    </div>
+
+    <!-- Admin: Add Entry -->
+    <div id="addEntryCard" class="card" style="display:none;">
+      <h2>Add Entry</h2>
+      <div class="form-grid">
+        <div class="form-group"><label>Name *</label><input type="text" id="entryName" placeholder="Full name"/></div>
+        <div class="form-group"><label>Email</label><input type="email" id="entryEmail" placeholder="email@hubinternational.com"/></div>
+        <div class="form-group"><label>Amount ($) *</label><input type="number" id="entryAmount" placeholder="0.00" min="0" step="0.01"/></div>
+        <div class="form-group"><label>Date Received *</label><input type="date" id="entryDate"/></div>
+        <div class="form-group"><label>Notes</label><input type="text" id="entryNotes" placeholder="Optional notes"/></div>
+      </div>
+      <button class="btn btn-primary" onclick="addEntry()">Add Entry</button>
+      <span id="entryMsg" style="margin-left:12px;font-size:.85rem;color:#3ebd3e;"></span>
+    </div>
+
+    <!-- Admin: Record Winner -->
+    <div id="recordWinnerCard" class="card" style="display:none;">
+      <h2>Record Winner</h2>
+      <div class="form-grid">
+        <div class="form-group"><label>Winner Name *</label><input type="text" id="winnerName" placeholder="Full name"/></div>
+        <div class="form-group"><label>Winner Email</label><input type="email" id="winnerEmail" placeholder="email@hubinternational.com"/></div>
+        <div class="form-group"><label>Date Drawn *</label><input type="date" id="winnerDateDrawn"/></div>
+        <div class="form-group"><label>Date Paid Out</label><input type="date" id="winnerDatePaid"/></div>
+      </div>
+      <button class="btn btn-gold" onclick="recordWinner()">Record Winner</button>
+      <span id="winnerMsg" style="margin-left:12px;font-size:.85rem;color:#3ebd3e;"></span>
+    </div>
+
+    <!-- Entries Table -->
+    <div class="card">
+      <h2>Entries <span id="entryCount" style="font-size:.85rem;color:#757584;font-weight:400;"></span></h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Amount</th><th>Date Received</th><th>Notes</th><th id="actionCol" style="display:none;">Action</th></tr></thead>
+          <tbody id="entriesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANNUAL SUMMARY VIEW -->
+  <div id="pageSummary" class="page">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <button class="btn btn-gray btn-sm" onclick="showPage('quarter')">← Back</button>
+      <h2 style="font-size:1.2rem;font-weight:700;">Annual Summary</h2>
+    </div>
+    <div class="stats" id="annualStats"></div>
+    <div class="card">
+      <h2>Quarter Breakdown</h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Quarter</th><th>Entries</th><th>Total Pot</th><th>Winner Gets (50%)</th><th>HUB Social Gets (50%)</th><th>Winner</th><th>Date Drawn</th><th>Status</th></tr></thead>
+          <tbody id="summaryBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer style="text-align:center;padding:24px;color:#757584;font-size:.8rem;border-top:1px solid #e3e3e3;margin-top:20px;">
+  Made with ✨ by <strong style="color:#263746;">The HUB Social</strong>
+</footer>
+
+<script>
+const SB_URL='https://zzpayiejynppqhtynlnk.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6cGF5aWVqeW5wcHFodHlubG5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MTQwNzEsImV4cCI6MjA4NzQ5MDA3MX0.zV0eYc6raOOWP2ebuX0JJep-mzqWCn74rj0JWcjEaAI';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const ADMIN_PW='HubAdmin2025!';
+let isAdmin=false;
+
+function fmt(n){return n==null?'-':'$'+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+function fmtDate(d){if(!d)return'-';const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-CA',{year:'numeric',month:'short',day:'numeric'});}
+
+function getQuarter(){
+  const v=document.getElementById('quarterSelect').value.split('-');
+  return{quarter:v[0],year:parseInt(v[1])};
+}
+
+function showPage(p){
+  document.getElementById('pageQuarter').classList.toggle('on',p==='quarter');
+  document.getElementById('pageSummary').classList.toggle('on',p==='summary');
+  if(p==='summary')loadSummary();
+}
+
+function showLogin(){document.getElementById('loginModal').style.display='flex';}
+
+function tryAdminLogin(){
+  if(document.getElementById('adminPw').value===ADMIN_PW){
+    isAdmin=true;
+    document.getElementById('loginModal').style.display='none';
+    document.getElementById('adminPw').value='';
+    document.getElementById('adminBadge').style.display='flex';
+    document.getElementById('adminLoginBtn').style.display='none';
+    document.getElementById('addEntryCard').style.display='block';
+    document.getElementById('recordWinnerCard').style.display='block';
+    document.getElementById('actionCol').style.display='';
+    // set default date to today
+    document.getElementById('entryDate').value=new Date().toISOString().split('T')[0];
+    loadQuarterData();
+  }else{document.getElementById('loginErr').textContent='Incorrect password.';}
+}
+
+function adminLogout(){
+  isAdmin=false;
+  document.getElementById('adminBadge').style.display='none';
+  document.getElementById('adminLoginBtn').style.display='block';
+  document.getElementById('addEntryCard').style.display='none';
+  document.getElementById('recordWinnerCard').style.display='none';
+  document.getElementById('actionCol').style.display='none';
+}
+
+async function loadQuarterData(){
+  const{quarter,year}=getQuarter();
+  // load entries
+  const{data:entries}=await sb.from('fifty_fifty').select('*').eq('quarter',quarter).eq('year',year).order('date_received',{ascending:true});
+  // load winner
+  const{data:winners}=await sb.from('fifty_fifty_winners').select('*').eq('quarter',quarter).eq('year',year);
+  const winner=winners&&winners.length?winners[0]:null;
+  const total=(entries||[]).reduce((s,e)=>s+Number(e.amount),0);
+  const half=total/2;
+
+  // stats
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat"><div class="val">${(entries||[]).length}</div><div class="lbl">Entries</div></div>
+    <div class="stat"><div class="val gold">${fmt(total)}</div><div class="lbl">Total Pot</div></div>
+    <div class="stat"><div class="val green">${fmt(half)}</div><div class="lbl">Winner Gets (50%)</div></div>
+    <div class="stat"><div class="val">${fmt(half)}</div><div class="lbl">HUB Social Gets (50%)</div></div>
+  `;
+
+  // winner banner
+  const banner=document.getElementById('winnerBanner');
+  if(winner){
+    banner.style.display='block';
+    document.getElementById('winnerInfo').innerHTML=`<strong>${winner.winner_name}</strong> &nbsp;|&nbsp; Won ${fmt(winner.winner_amount)} &nbsp;|&nbsp; Drawn: ${fmtDate(winner.date_drawn)}${winner.date_paid?` &nbsp;|&nbsp; Paid: ${fmtDate(winner.date_paid)}`:''}`;
+  }else{banner.style.display='none';}
+
+  // pre-fill winner form
+  if(isAdmin){
+    document.getElementById('winnerName').value=winner?.winner_name||'';
+    document.getElementById('winnerEmail').value=winner?.winner_email||'';
+    document.getElementById('winnerDateDrawn').value=winner?.date_drawn||'';
+    document.getElementById('winnerDatePaid').value=winner?.date_paid||'';
+  }
+
+  // entries table
+  document.getElementById('entryCount').textContent=`(${(entries||[]).length} entries)`;
+  const tbody=document.getElementById('entriesBody');
+  tbody.innerHTML='';
+  if(!entries||!entries.length){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:#757584;padding:20px;">No entries yet for this quarter</td></tr>';
+    return;
+  }
+  entries.forEach((e,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td><td>${e.name}</td><td>${e.email||'-'}</td><td><strong>${fmt(e.amount)}</strong></td><td>${fmtDate(e.date_received)}</td><td>${e.notes||'-'}</td><td id="ac-${e.id}" style="display:${isAdmin?'':'none'}"><button class="btn btn-red btn-sm" onclick="deleteEntry(${e.id})">Delete</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function addEntry(){
+  const name=document.getElementById('entryName').value.trim();
+  const email=document.getElementById('entryEmail').value.trim();
+  const amount=parseFloat(document.getElementById('entryAmount').value);
+  const date=document.getElementById('entryDate').value;
+  const notes=document.getElementById('entryNotes').value.trim();
+  const{quarter,year}=getQuarter();
+  if(!name||!amount||!date){alert('Please fill in Name, Amount and Date.');return;}
+  const{error}=await sb.from('fifty_fifty').insert({name,email,amount,date_received:date,quarter,year,notes});
+  if(error){alert('Error saving entry: '+error.message);return;}
+  document.getElementById('entryName').value='';
+  document.getElementById('entryEmail').value='';
+  document.getElementById('entryAmount').value='';
+  document.getElementById('entryNotes').value='';
+  document.getElementById('entryMsg').textContent='Entry added!';
+  setTimeout(()=>document.getElementById('entryMsg').textContent='',2000);
+  loadQuarterData();
+}
+
+async function deleteEntry(id){
+  if(!confirm('Delete this entry?'))return;
+  await sb.from('fifty_fifty').delete().eq('id',id);
+  loadQuarterData();
+}
+
+async function recordWinner(){
+  const name=document.getElementById('winnerName').value.trim();
+  const email=document.getElementById('winnerEmail').value.trim();
+  const dateDrawn=document.getElementById('winnerDateDrawn').value;
+  const datePaid=document.getElementById('winnerDatePaid').value;
+  const{quarter,year}=getQuarter();
+  if(!name||!dateDrawn){alert('Please fill in Winner Name and Date Drawn.');return;}
+  const{data:entries}=await sb.from('fifty_fifty').select('amount').eq('quarter',quarter).eq('year',year);
+  const total=(entries||[]).reduce((s,e)=>s+Number(e.amount),0);
+  const half=total/2;
+  // upsert winner
+  const{data:existing}=await sb.from('fifty_fifty_winners').select('id').eq('quarter',quarter).eq('year',year);
+  if(existing&&existing.length){
+    await sb.from('fifty_fifty_winners').update({winner_name:name,winner_email:email,total_pot:total,winner_amount:half,hub_social_amount:half,date_drawn:dateDrawn,date_paid:datePaid||null}).eq('id',existing[0].id);
+  }else{
+    await sb.from('fifty_fifty_winners').insert({quarter,year,winner_name:name,winner_email:email,total_pot:total,winner_amount:half,hub_social_amount:half,date_drawn:dateDrawn,date_paid:datePaid||null});
+  }
+  document.getElementById('winnerMsg').textContent='Winner recorded!';
+  setTimeout(()=>document.getElementById('winnerMsg').textContent='',2000);
+  loadQuarterData();
+}
+
+async function loadSummary(){
+  const quarters=['Q1','Q2','Q3','Q4'];
+  const years=[2026,2027];
+  let rows=[],totalPot=0,totalHUB=0,totalEntries=0;
+  for(const year of years){
+    for(const q of quarters){
+      const{data:entries}=await sb.from('fifty_fifty').select('amount').eq('quarter',q).eq('year',year);
+      const{data:winners}=await sb.from('fifty_fifty_winners').select('*').eq('quarter',q).eq('year',year);
+      const cnt=(entries||[]).length;
+      const pot=(entries||[]).reduce((s,e)=>s+Number(e.amount),0);
+      const half=pot/2;
+      const winner=winners&&winners.length?winners[0]:null;
+      if(cnt>0||winner){
+        totalPot+=pot;totalHUB+=half;totalEntries+=cnt;
+        rows.push({q,year,cnt,pot,half,winner});
+      }
+    }
+  }
+  document.getElementById('annualStats').innerHTML=`
+    <div class="stat"><div class="val">${totalEntries}</div><div class="lbl">Total Entries</div></div>
+    <div class="stat"><div class="val gold">${fmt(totalPot)}</div><div class="lbl">Total Raised</div></div>
+    <div class="stat"><div class="val green">${fmt(totalHUB)}</div><div class="lbl">HUB Social Earned</div></div>
+    <div class="stat"><div class="val">${rows.length}</div><div class="lbl">Quarters Run</div></div>
+  `;
+  const tbody=document.getElementById('summaryBody');tbody.innerHTML='';
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:#757584;padding:20px;">No data yet</td></tr>';return;}
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    const status=r.winner?`<span class="pill pill-green">Complete</span>`:`<span class="pill pill-gold">In Progress</span>`;
+    tr.innerHTML=`<td><strong>${r.q} ${r.year}</strong></td><td>${r.cnt}</td><td>${fmt(r.pot)}</td><td><strong>${fmt(r.half)}</strong></td><td>${fmt(r.half)}</td><td>${r.winner?r.winner.winner_name:'-'}</td><td>${r.winner?fmtDate(r.winner.date_drawn):'-'}</td><td>${status}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function exportCSV(){
+  const{quarter,year}=getQuarter();
+  sb.from('fifty_fifty').select('*').eq('quarter',quarter).eq('year',year).order('date_received').then(({data})=>{
+    if(!data||!data.length){alert('No entries to export.');return;}
+    const headers=['#','Name','Email','Amount','Date Received','Notes'];
+    const rows=data.map((e,i)=>[i+1,e.name,e.email||'',e.amount,e.date_received,e.notes||'']);
+    const total=data.reduce((s,e)=>s+Number(e.amount),0);
+    rows.push([]);
+    rows.push(['','','Total Pot',total,'','']);
+    rows.push(['','','Winner Gets (50%)',total/2,'','']);
+    rows.push(['','','HUB Social Gets (50%)',total/2,'','']);
+    const csv=[headers,...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+    const a=document.createElement('a');
+    a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+    a.download=`HUB-5050-${quarter}-${year}.csv`;
+    a.click();
+  });
+}
+
+// init
+loadQuarterData();
+</script>
+</body>
+</html>
