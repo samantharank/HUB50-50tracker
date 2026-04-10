@@ -20,7 +20,6 @@ header{background:#263746;border-bottom:4px solid #f3b921;padding:0 24px;display
 .stat .val{font-size:1.8rem;font-weight:900;color:#263746;}
 .stat .val.gold{color:#f3b921;}
 .stat .val.green{color:#3ebd3e;}
-.stat .val.blue{color:#0678d5;}
 .stat .lbl{font-size:.75rem;color:#757584;margin-top:4px;text-transform:uppercase;letter-spacing:1px;}
 .tbl-wrap{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:.9rem;}
@@ -30,7 +29,7 @@ tr:hover td{background:#fafafa;}
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px;}
 .form-group{display:flex;flex-direction:column;gap:4px;}
 .form-group label{font-size:.8rem;font-weight:700;color:#263746;}
-.form-group input,.form-group select{padding:10px;border-radius:8px;border:1px solid #e3e3e3;font-size:.9rem;color:#263746;}
+.form-group input,.form-group select{padding:10px;border-radius:8px;border:1px solid #e3e3e3;font-size:.9rem;color:#263746;width:100%;}
 .form-group input:focus,.form-group select:focus{outline:none;border-color:#263746;}
 .btn{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:700;transition:all .2s;}
 .btn:hover{opacity:.85;}
@@ -49,10 +48,8 @@ tr:hover td{background:#fafafa;}
 .pill{padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700;display:inline-block;}
 .pill-gold{background:#fff3cd;color:#856404;}
 .pill-green{background:#d4edda;color:#155724;}
-.pill-gray{background:#e3e3e3;color:#555;}
-/* modal */
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;}
-.modal.on{display:flex;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;}
+.overlay.on{display:flex;}
 .json-box{width:100%;min-height:200px;background:#eef0e2;color:#263746;border:1px solid #e3e3e3;border-radius:8px;padding:12px;font-family:monospace;font-size:.8rem;resize:none;}
 </style>
 </head>
@@ -67,30 +64,30 @@ tr:hover td{background:#fafafa;}
     <div class="badge">50/50 Tracker</div>
     <div id="adminBadge" style="display:none;align-items:center;gap:8px;">
       <span style="color:#f3b921;font-size:.8rem;font-weight:700;">Admin</span>
-      <button onclick="adminLogout()" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.75rem;">Log out</button>
+      <button id="adminLogoutBtn" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.75rem;">Log out</button>
     </div>
-    <button id="adminLoginBtn" onclick="showLogin()" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem;">Admin Login</button>
+    <button id="adminLoginBtn" style="background:rgba(255,255,255,.1);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem;">Admin Login</button>
   </div>
 </header>
 
-<!-- LOGIN MODAL -->
-<div id="loginModal" class="modal">
+<!-- LOGIN OVERLAY -->
+<div id="loginOverlay" class="overlay">
   <div class="card" style="max-width:340px;width:95%;">
     <h2>Admin Login</h2>
     <div class="form-group" style="margin-bottom:12px;">
       <label>Password</label>
-      <input type="password" id="adminPw" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')tryAdminLogin()"/>
+      <input type="password" id="adminPw" placeholder="Enter admin password"/>
     </div>
     <div id="loginErr" class="err"></div>
     <div style="display:flex;gap:8px;margin-top:12px;">
-      <button class="btn btn-primary" onclick="tryAdminLogin()">Login</button>
-      <button class="btn btn-gray" onclick="document.getElementById('loginModal').classList.remove('on')">Cancel</button>
+      <button id="loginSubmitBtn" class="btn btn-primary">Login</button>
+      <button id="loginCancelBtn" class="btn btn-gray">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- EDIT MODAL -->
-<div id="editModal" class="modal">
+<!-- EDIT OVERLAY -->
+<div id="editOverlay" class="overlay">
   <div class="card" style="max-width:500px;width:95%;">
     <h2>Edit Entry</h2>
     <input type="hidden" id="editId"/>
@@ -101,39 +98,37 @@ tr:hover td{background:#fafafa;}
       <div class="form-group"><label>Date Received *</label><input type="date" id="editDate"/></div>
       <div class="form-group"><label>Payment Status</label>
         <select id="editPaid">
-          <option value="paid">✅ Paid</option>
-          <option value="pending">⏳ Pending</option>
+          <option value="paid">Paid</option>
+          <option value="pending">Pending</option>
         </select>
       </div>
-      <div class="form-group"><label>Notes</label><input type="text" id="editNotes" placeholder="Optional notes"/></div>
+      <div class="form-group"><label>Notes</label><input type="text" id="editNotes" placeholder="Optional"/></div>
     </div>
     <div style="display:flex;gap:8px;margin-top:12px;">
-      <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
-      <button class="btn btn-gray" onclick="document.getElementById('editModal').classList.remove('on')">Cancel</button>
+      <button id="saveEditBtn" class="btn btn-primary">Save Changes</button>
+      <button id="cancelEditBtn" class="btn btn-gray">Cancel</button>
     </div>
     <div id="editMsg" style="margin-top:8px;font-size:.85rem;color:#3ebd3e;"></div>
   </div>
 </div>
 
-<!-- JSON MODAL -->
-<div id="jsonModal" class="modal">
+<!-- JSON OVERLAY -->
+<div id="jsonOverlay" class="overlay">
   <div class="card" style="max-width:640px;width:95%;">
     <h2>Bingo JSON Export</h2>
-    <p style="color:#757584;font-size:.85rem;margin-bottom:12px;">Copy and paste into your Power Automate flow. Only confirmed paid players are included (<span id="jsonCount"></span>).</p>
+    <p style="color:#757584;font-size:.85rem;margin-bottom:12px;">Copy and paste into your Power Automate flow. Only confirmed paid players included (<span id="jsonCount"></span>).</p>
     <textarea id="jsonBox" class="json-box" readonly></textarea>
     <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
-      <button class="btn btn-green" onclick="copyJSON(this)">Copy JSON</button>
-      <button class="btn btn-gray" onclick="document.getElementById('jsonModal').classList.remove('on')">Close</button>
+      <button id="copyJsonBtn" class="btn btn-green">Copy JSON</button>
+      <button id="closeJsonBtn" class="btn btn-gray">Close</button>
     </div>
   </div>
 </div>
 
 <div class="container">
-
-  <!-- QUARTER SELECTOR -->
   <div class="quarter-selector">
     <label style="font-weight:700;font-size:.9rem;">Quarter:</label>
-    <select id="quarterSelect" onchange="loadQuarterData()">
+    <select id="quarterSelect">
       <option value="Q1-2026">Q1 2026</option>
       <option value="Q2-2026">Q2 2026</option>
       <option value="Q3-2026">Q3 2026</option>
@@ -143,9 +138,9 @@ tr:hover td{background:#fafafa;}
       <option value="Q3-2027">Q3 2027</option>
       <option value="Q4-2027">Q4 2027</option>
     </select>
-    <button class="btn btn-gray btn-sm" onclick="showPage('summary')">📊 Annual Summary</button>
-    <button class="btn btn-gray btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
-    <button id="bingoExportBtn" class="btn btn-blue btn-sm" onclick="exportBingoJSON()" style="display:none;">🎰 Export Bingo JSON</button>
+    <button id="summaryBtn" class="btn btn-gray btn-sm">📊 Annual Summary</button>
+    <button id="csvBtn" class="btn btn-gray btn-sm">⬇ Export CSV</button>
+    <button id="bingoJsonBtn" class="btn btn-blue btn-sm" style="display:none;">🎰 Export Bingo JSON</button>
   </div>
 
   <!-- QUARTER VIEW -->
@@ -155,8 +150,6 @@ tr:hover td{background:#fafafa;}
       <h3>🏆 Quarter Winner</h3>
       <div id="winnerInfo" style="font-size:1.1rem;"></div>
     </div>
-
-    <!-- Admin: Add Entry -->
     <div id="addEntryCard" class="card" style="display:none;">
       <h2>Add Entry</h2>
       <div class="form-grid">
@@ -170,13 +163,11 @@ tr:hover td{background:#fafafa;}
             <option value="pending">⏳ Pending</option>
           </select>
         </div>
-        <div class="form-group"><label>Notes</label><input type="text" id="entryNotes" placeholder="Optional notes"/></div>
+        <div class="form-group"><label>Notes</label><input type="text" id="entryNotes" placeholder="Optional"/></div>
       </div>
-      <button class="btn btn-primary" onclick="addEntry()">Add Entry</button>
+      <button id="addEntryBtn" class="btn btn-primary">Add Entry</button>
       <span id="entryMsg" style="margin-left:12px;font-size:.85rem;color:#3ebd3e;"></span>
     </div>
-
-    <!-- Admin: Record Winner -->
     <div id="recordWinnerCard" class="card" style="display:none;">
       <h2>Record Winner</h2>
       <div class="form-grid">
@@ -185,24 +176,16 @@ tr:hover td{background:#fafafa;}
         <div class="form-group"><label>Date Drawn *</label><input type="date" id="winnerDateDrawn"/></div>
         <div class="form-group"><label>Date Paid Out</label><input type="date" id="winnerDatePaid"/></div>
       </div>
-      <button class="btn btn-gold" onclick="recordWinner()">Record Winner</button>
+      <button id="recordWinnerBtn" class="btn btn-gold">Record Winner</button>
       <span id="winnerMsg" style="margin-left:12px;font-size:.85rem;color:#3ebd3e;"></span>
     </div>
-
-    <!-- Entries Table -->
     <div class="card">
       <h2>Entries <span id="entryCount" style="font-size:.85rem;color:#757584;font-weight:400;"></span></h2>
       <div class="tbl-wrap">
         <table>
           <thead>
             <tr>
-              <th>#</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Amount</th>
-              <th>Date Received</th>
-              <th>Payment Status</th>
-              <th>Notes</th>
+              <th>#</th><th>Name</th><th>Email</th><th>Amount</th><th>Date Received</th><th>Payment Status</th><th>Notes</th>
               <th id="actionCol" style="display:none;">Actions</th>
             </tr>
           </thead>
@@ -215,7 +198,7 @@ tr:hover td{background:#fafafa;}
   <!-- ANNUAL SUMMARY -->
   <div id="pageSummary" class="page">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-      <button class="btn btn-gray btn-sm" onclick="showPage('quarter')">← Back</button>
+      <button id="backBtn" class="btn btn-gray btn-sm">← Back</button>
       <h2 style="font-size:1.2rem;font-weight:700;">Annual Summary</h2>
     </div>
     <div class="stats" id="annualStats"></div>
@@ -229,7 +212,6 @@ tr:hover td{background:#fafafa;}
       </div>
     </div>
   </div>
-
 </div>
 
 <footer style="text-align:center;padding:24px;color:#757584;font-size:.8rem;border-top:1px solid #e3e3e3;margin-top:20px;">
@@ -243,16 +225,35 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 const ADMIN_PW='HubAdmin2025!';
 const BINGO_URL='https://hub-bingo.netlify.app';
 let isAdmin=false;
+let currentEntries=[];
 
-function fmt(n){return n==null?'-':'$'+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
-function fmtDate(d){if(!d)return'-';const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-CA',{year:'numeric',month:'short',day:'numeric'});}
-function fnFromEmail(e){const p=e.split('@')[0].split('.')[0];return p[0].toUpperCase()+p.slice(1).toLowerCase();}
-function fullFromEmail(e){return e.split('@')[0].split('.').map(p=>p[0].toUpperCase()+p.slice(1).toLowerCase()).join(' ');}
+const fmt=n=>n==null?'-':'$'+Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+const fmtDate=d=>{if(!d)return'-';const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-CA',{year:'numeric',month:'short',day:'numeric'});};
+const fnFromEmail=e=>{const p=e.split('@')[0].split('.')[0];return p[0].toUpperCase()+p.slice(1).toLowerCase();};
+const fullFromEmail=e=>e.split('@')[0].split('.').map(p=>p[0].toUpperCase()+p.slice(1).toLowerCase()).join(' ');
+const getQ=()=>{const v=document.getElementById('quarterSelect').value.split('-');return{quarter:v[0],year:parseInt(v[1])};};
 
-function getQuarter(){
-  const v=document.getElementById('quarterSelect').value.split('-');
-  return{quarter:v[0],year:parseInt(v[1])};
-}
+// Wire up all buttons using addEventListener - no onclick attributes
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('adminLoginBtn').addEventListener('click',()=>document.getElementById('loginOverlay').classList.add('on'));
+  document.getElementById('adminLogoutBtn').addEventListener('click',adminLogout);
+  document.getElementById('loginSubmitBtn').addEventListener('click',tryLogin);
+  document.getElementById('loginCancelBtn').addEventListener('click',()=>document.getElementById('loginOverlay').classList.remove('on'));
+  document.getElementById('adminPw').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
+  document.getElementById('quarterSelect').addEventListener('change',loadQuarterData);
+  document.getElementById('summaryBtn').addEventListener('click',()=>showPage('summary'));
+  document.getElementById('backBtn').addEventListener('click',()=>showPage('quarter'));
+  document.getElementById('csvBtn').addEventListener('click',exportCSV);
+  document.getElementById('bingoJsonBtn').addEventListener('click',exportBingoJSON);
+  document.getElementById('addEntryBtn').addEventListener('click',addEntry);
+  document.getElementById('recordWinnerBtn').addEventListener('click',recordWinner);
+  document.getElementById('saveEditBtn').addEventListener('click',saveEdit);
+  document.getElementById('cancelEditBtn').addEventListener('click',()=>document.getElementById('editOverlay').classList.remove('on'));
+  document.getElementById('copyJsonBtn').addEventListener('click',copyJSON);
+  document.getElementById('closeJsonBtn').addEventListener('click',()=>document.getElementById('jsonOverlay').classList.remove('on'));
+  document.getElementById('entryDate').value=new Date().toISOString().split('T')[0];
+  loadQuarterData();
+});
 
 function showPage(p){
   document.getElementById('pageQuarter').classList.toggle('on',p==='quarter');
@@ -260,22 +261,22 @@ function showPage(p){
   if(p==='summary')loadSummary();
 }
 
-function showLogin(){document.getElementById('loginModal').classList.add('on');}
-
-function tryAdminLogin(){
+function tryLogin(){
   if(document.getElementById('adminPw').value===ADMIN_PW){
     isAdmin=true;
-    document.getElementById('loginModal').classList.remove('on');
+    document.getElementById('loginOverlay').classList.remove('on');
     document.getElementById('adminPw').value='';
+    document.getElementById('loginErr').textContent='';
     document.getElementById('adminBadge').style.display='flex';
     document.getElementById('adminLoginBtn').style.display='none';
     document.getElementById('addEntryCard').style.display='block';
     document.getElementById('recordWinnerCard').style.display='block';
     document.getElementById('actionCol').style.display='';
-    document.getElementById('bingoExportBtn').style.display='block';
-    document.getElementById('entryDate').value=new Date().toISOString().split('T')[0];
+    document.getElementById('bingoJsonBtn').style.display='inline-block';
     loadQuarterData();
-  }else{document.getElementById('loginErr').textContent='Incorrect password.';}
+  }else{
+    document.getElementById('loginErr').textContent='Incorrect password.';
+  }
 }
 
 function adminLogout(){
@@ -285,24 +286,24 @@ function adminLogout(){
   document.getElementById('addEntryCard').style.display='none';
   document.getElementById('recordWinnerCard').style.display='none';
   document.getElementById('actionCol').style.display='none';
-  document.getElementById('bingoExportBtn').style.display='none';
+  document.getElementById('bingoJsonBtn').style.display='none';
 }
 
 async function loadQuarterData(){
-  const{quarter,year}=getQuarter();
+  const{quarter,year}=getQ();
   const{data:entries}=await sb.from('fifty_fifty').select('*').eq('quarter',quarter).eq('year',year).order('date_received',{ascending:true});
   const{data:winners}=await sb.from('fifty_fifty_winners').select('*').eq('quarter',quarter).eq('year',year);
+  currentEntries=entries||[];
   const winner=winners&&winners.length?winners[0]:null;
-  const paid=(entries||[]).filter(e=>e.paid_status==='paid'||e.paid_status==null);
+  const paid=currentEntries.filter(e=>e.paid_status==='paid'||e.paid_status==null);
+  const pending=currentEntries.filter(e=>e.paid_status==='pending');
   const total=paid.reduce((s,e)=>s+Number(e.amount),0);
   const half=total/2;
-  const paidCount=paid.length;
-  const pendingCount=(entries||[]).filter(e=>e.paid_status==='pending').length;
 
   document.getElementById('statsRow').innerHTML=`
-    <div class="stat"><div class="val">${(entries||[]).length}</div><div class="lbl">Total Entries</div></div>
-    <div class="stat"><div class="val green">${paidCount}</div><div class="lbl">Confirmed Paid</div></div>
-    <div class="stat"><div class="val" style="color:#f3b921;">${pendingCount}</div><div class="lbl">Pending</div></div>
+    <div class="stat"><div class="val">${currentEntries.length}</div><div class="lbl">Total Entries</div></div>
+    <div class="stat"><div class="val green">${paid.length}</div><div class="lbl">Confirmed Paid</div></div>
+    <div class="stat"><div class="val" style="color:#f3b921;">${pending.length}</div><div class="lbl">Pending</div></div>
     <div class="stat"><div class="val gold">${fmt(total)}</div><div class="lbl">Total Pot</div></div>
     <div class="stat"><div class="val green">${fmt(half)}</div><div class="lbl">Winner Gets (50%)</div></div>
     <div class="stat"><div class="val">${fmt(half)}</div><div class="lbl">HUB Social Gets (50%)</div></div>
@@ -321,51 +322,61 @@ async function loadQuarterData(){
     document.getElementById('winnerDatePaid').value=winner?.date_paid||'';
   }
 
-  document.getElementById('entryCount').textContent=`(${(entries||[]).length} entries)`;
-  const tbody=document.getElementById('entriesBody');tbody.innerHTML='';
-  if(!entries||!entries.length){
+  document.getElementById('entryCount').textContent=`(${currentEntries.length} entries)`;
+  const tbody=document.getElementById('entriesBody');
+  tbody.innerHTML='';
+  if(!currentEntries.length){
     tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:#757584;padding:20px;">No entries yet for this quarter</td></tr>';
     return;
   }
-  entries.forEach((e,i)=>{
+  currentEntries.forEach((e,i)=>{
     const isPaid=e.paid_status==='paid'||e.paid_status==null;
-    const statusPill=isPaid?`<span class="pill pill-green">✅ Paid</span>`:`<span class="pill pill-gold">⏳ Pending</span>`;
     const tr=document.createElement('tr');
-    tr.id=`row-${e.id}`;
+    const actionCell=document.createElement('td');
+    actionCell.style.display=isAdmin?'':'none';
+    const editBtn=document.createElement('button');
+    editBtn.className='btn btn-primary btn-sm';
+    editBtn.textContent='Edit';
+    editBtn.style.marginRight='6px';
+    editBtn.addEventListener('click',()=>openEdit(e.id));
+    const toggleBtn=document.createElement('button');
+    toggleBtn.className=isPaid?'btn btn-gold btn-sm':'btn btn-green btn-sm';
+    toggleBtn.textContent=isPaid?'Mark Pending':'Mark Paid';
+    toggleBtn.style.marginRight='6px';
+    toggleBtn.addEventListener('click',()=>togglePaid(e.id,isPaid?'pending':'paid'));
+    const delBtn=document.createElement('button');
+    delBtn.className='btn btn-red btn-sm';
+    delBtn.textContent='Delete';
+    delBtn.addEventListener('click',()=>deleteEntry(e.id));
+    actionCell.appendChild(editBtn);
+    actionCell.appendChild(toggleBtn);
+    actionCell.appendChild(delBtn);
     tr.innerHTML=`
       <td>${i+1}</td>
       <td>${e.name}</td>
       <td>${e.email||'-'}</td>
       <td><strong>${fmt(e.amount)}</strong></td>
       <td>${fmtDate(e.date_received)}</td>
-      <td>${statusPill}</td>
+      <td><span class="pill ${isPaid?'pill-green':'pill-gold'}">${isPaid?'✅ Paid':'⏳ Pending'}</span></td>
       <td>${e.notes||'-'}</td>
-      <td style="display:${isAdmin?'':'none'};">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="btn btn-primary btn-sm" onclick="editEntry(${e.id})">Edit</button>
-          ${isPaid
-            ?`<button class="btn btn-gold btn-sm" onclick="togglePaid(${e.id},'pending')">Mark Pending</button>`
-            :`<button class="btn btn-green btn-sm" onclick="togglePaid(${e.id},'paid')">Mark Paid</button>`
-          }
-          <button class="btn btn-red btn-sm" onclick="deleteEntry(${e.id})">Delete</button>
-        </div>
-      </td>`;
+    `;
+    tr.appendChild(actionCell);
     tbody.appendChild(tr);
   });
 }
 
-async function editEntry(id){
-  const{data,error}=await sb.from('fifty_fifty').select('*').eq('id',id).single();
-  if(error||!data){alert('Could not load entry.');return;}
-  document.getElementById('editId').value=data.id;
-  document.getElementById('editName').value=data.name;
-  document.getElementById('editEmail').value=data.email||'';
-  document.getElementById('editAmount').value=data.amount;
-  document.getElementById('editDate').value=data.date_received;
-  document.getElementById('editNotes').value=data.notes||'';
-  document.getElementById('editPaid').value=data.paid_status||'paid';
+async function openEdit(id){
+  const e=currentEntries.find(x=>x.id===id);
+  if(!e)return;
+  document.getElementById('editId').value=e.id;
+  document.getElementById('editName').value=e.name;
+  document.getElementById('editEmail').value=e.email||'';
+  document.getElementById('editAmount').value=e.amount;
+  document.getElementById('editDate').value=e.date_received;
+  document.getElementById('editNotes').value=e.notes||'';
+  document.getElementById('editPaid').value=e.paid_status||'paid';
   document.getElementById('editMsg').textContent='';
-  document.getElementById('editModal').classList.add('on');
+  document.getElementById('editOverlay').classList.add('on');
 }
 
 async function saveEdit(){
@@ -380,8 +391,10 @@ async function saveEdit(){
   const{error}=await sb.from('fifty_fifty').update({name,email,amount,date_received:date,notes,paid_status}).eq('id',id);
   if(error){alert('Error saving: '+error.message);return;}
   document.getElementById('editMsg').textContent='Saved!';
-  setTimeout(()=>{document.getElementById('editModal').classList.remove('on');loadQuarterData();},800);
+  setTimeout(()=>{document.getElementById('editOverlay').classList.remove('on');loadQuarterData();},800);
 }
+
+async function togglePaid(id,status){
   await sb.from('fifty_fifty').update({paid_status:status}).eq('id',id);
   loadQuarterData();
 }
@@ -393,7 +406,7 @@ async function addEntry(){
   const date=document.getElementById('entryDate').value;
   const paid_status=document.getElementById('entryPaid').value;
   const notes=document.getElementById('entryNotes').value.trim();
-  const{quarter,year}=getQuarter();
+  const{quarter,year}=getQ();
   if(!name||!email||!amount||!date){alert('Please fill in Name, Email, Amount and Date.');return;}
   const{error}=await sb.from('fifty_fifty').insert({name,email,amount,date_received:date,quarter,year,notes,paid_status});
   if(error){alert('Error saving: '+error.message);return;}
@@ -417,10 +430,10 @@ async function recordWinner(){
   const email=document.getElementById('winnerEmail').value.trim();
   const dateDrawn=document.getElementById('winnerDateDrawn').value;
   const datePaid=document.getElementById('winnerDatePaid').value;
-  const{quarter,year}=getQuarter();
+  const{quarter,year}=getQ();
   if(!name||!dateDrawn){alert('Please fill in Winner Name and Date Drawn.');return;}
-  const{data:entries}=await sb.from('fifty_fifty').select('amount').eq('quarter',quarter).eq('year',year).eq('paid_status','paid');
-  const total=(entries||[]).reduce((s,e)=>s+Number(e.amount),0);
+  const paid=currentEntries.filter(e=>e.paid_status==='paid'||e.paid_status==null);
+  const total=paid.reduce((s,e)=>s+Number(e.amount),0);
   const half=total/2;
   const{data:existing}=await sb.from('fifty_fifty_winners').select('id').eq('quarter',quarter).eq('year',year);
   if(existing&&existing.length){
@@ -433,28 +446,43 @@ async function recordWinner(){
   loadQuarterData();
 }
 
-async function exportBingoJSON(){
-  const{quarter,year}=getQuarter();
-  const{data:entries}=await sb.from('fifty_fifty').select('*').eq('quarter',quarter).eq('year',year).eq('paid_status','paid');
-  if(!entries||!entries.length){alert('No confirmed paid entries to export.');return;}
-  const data=entries.map(e=>({
-    name:fullFromEmail(e.email)||e.name,
-    email:e.email,
-    cardHTML:buildBingoEmail(e.email||e.name)
-  }));
-  document.getElementById('jsonBox').value=JSON.stringify(data,null,2);
-  document.getElementById('jsonCount').textContent=`${entries.length} players`;
-  document.getElementById('jsonModal').classList.add('on');
-}
-
 function buildBingoEmail(email){
-  const f=fnFromEmail(email)||email.split('@')[0];
+  const f=fnFromEmail(email);
   return `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#ffffff;border:1px solid #e3e3e3;"><tr><td style="padding:16px 32px;text-align:center;border-bottom:1px solid #e3e3e3;"><span style="font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#263746;">The HUB Social</span></td></tr><tr><td style="padding:36px 32px;text-align:center;"><h1 style="color:#263746;font-size:26px;font-weight:900;margin:0 0 12px 0;">It's Bingo Time!</h1><p style="color:#263746;font-size:15px;margin:0 0 6px 0;">Hi <strong>${f}</strong>,</p><p style="color:#263746;font-size:14px;line-height:1.7;margin:0 0 28px 0;">Your personal bingo card is ready and waiting for you. Click the button below to open the live game - your card will load automatically when you enter your HUB email.</p><table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;"><tr><td style="background:#263746;border-radius:50px;padding:14px 36px;"><a href="${BINGO_URL}" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;display:block;">Open My Bingo Card</a></td></tr></table></td></tr><tr><td style="padding:24px 32px;border-top:1px solid #e3e3e3;text-align:center;"><p style="color:#263746;font-size:13px;font-weight:700;margin:0 0 10px 0;">How to play:</p><p style="color:#263746;font-size:13px;line-height:1.8;margin:0 0 16px 0;">1. Click the button above and enter your HUB email<br>2. Your unique card loads automatically<br>3. Tap numbers as they are called<br>4. Get 5 in a row and claim BINGO!</p><p style="color:#263746;font-size:12px;margin:0;">Good Luck, Have Fun! - Bragging rights are absolutely on the line.</p></td></tr></table>`;
 }
 
-function copyJSON(btn){
-  document.getElementById('jsonBox').select();document.execCommand('copy');
-  btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy JSON',2000);
+async function exportBingoJSON(){
+  const paid=currentEntries.filter(e=>e.paid_status==='paid'||e.paid_status==null);
+  if(!paid.length){alert('No confirmed paid entries to export.');return;}
+  const data=paid.map(e=>({name:fullFromEmail(e.email)||e.name,email:e.email,cardHTML:buildBingoEmail(e.email)}));
+  document.getElementById('jsonBox').value=JSON.stringify(data,null,2);
+  document.getElementById('jsonCount').textContent=`${paid.length} players`;
+  document.getElementById('jsonOverlay').classList.add('on');
+}
+
+function copyJSON(){
+  document.getElementById('jsonBox').select();
+  document.execCommand('copy');
+  document.getElementById('copyJsonBtn').textContent='Copied!';
+  setTimeout(()=>document.getElementById('copyJsonBtn').textContent='Copy JSON',2000);
+}
+
+function exportCSV(){
+  if(!currentEntries.length){alert('No entries to export.');return;}
+  const{quarter,year}=getQ();
+  const headers=['#','Name','Email','Amount','Date Received','Payment Status','Notes'];
+  const rows=currentEntries.map((e,i)=>[i+1,e.name,e.email||'',e.amount,e.date_received,e.paid_status||'paid',e.notes||'']);
+  const paid=currentEntries.filter(e=>e.paid_status==='paid'||e.paid_status==null);
+  const total=paid.reduce((s,e)=>s+Number(e.amount),0);
+  rows.push([]);
+  rows.push(['','','Total Pot (Paid only)',total,'','','']);
+  rows.push(['','','Winner Gets (50%)',total/2,'','','']);
+  rows.push(['','','HUB Social Gets (50%)',total/2,'','','']);
+  const csv=[headers,...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`HUB-5050-${quarter}-${year}.csv`;
+  a.click();
 }
 
 async function loadSummary(){
@@ -470,10 +498,7 @@ async function loadSummary(){
       const pot=paidEntries.reduce((s,e)=>s+Number(e.amount),0);
       const half=pot/2;
       const winner=winners&&winners.length?winners[0]:null;
-      if(cnt>0||winner){
-        totalPot+=pot;totalHUB+=half;totalEntries+=cnt;
-        rows.push({q,year,cnt,paidCnt:paidEntries.length,pot,half,winner});
-      }
+      if(cnt>0||winner){totalPot+=pot;totalHUB+=half;totalEntries+=cnt;rows.push({q,year,cnt,paidCnt:paidEntries.length,pot,half,winner});}
     }
   }
   document.getElementById('annualStats').innerHTML=`
@@ -491,29 +516,6 @@ async function loadSummary(){
     tbody.appendChild(tr);
   });
 }
-
-function exportCSV(){
-  const{quarter,year}=getQuarter();
-  sb.from('fifty_fifty').select('*').eq('quarter',quarter).eq('year',year).order('date_received').then(({data})=>{
-    if(!data||!data.length){alert('No entries to export.');return;}
-    const headers=['#','Name','Email','Amount','Date Received','Payment Status','Notes'];
-    const rows=data.map((e,i)=>[i+1,e.name,e.email||'',e.amount,e.date_received,e.paid_status||'paid',e.notes||'']);
-    const paid=data.filter(e=>e.paid_status==='paid'||e.paid_status==null);
-    const total=paid.reduce((s,e)=>s+Number(e.amount),0);
-    rows.push([]);
-    rows.push(['','','Total Pot (Paid only)',total,'','','']);
-    rows.push(['','','Winner Gets (50%)',total/2,'','','']);
-    rows.push(['','','HUB Social Gets (50%)',total/2,'','','']);
-    const csv=[headers,...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
-    const a=document.createElement('a');
-    a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-    a.download=`HUB-5050-${quarter}-${year}.csv`;
-    a.click();
-  });
-}
-
-// init
-loadQuarterData();
 </script>
 </body>
 </html>
