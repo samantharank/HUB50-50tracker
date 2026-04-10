@@ -334,15 +334,15 @@ async function loadQuarterData(){
     tr.id=`row-${e.id}`;
     tr.innerHTML=`
       <td>${i+1}</td>
-      <td id="name-${e.id}">${e.name}</td>
-      <td id="email-${e.id}">${e.email||'-'}</td>
-      <td id="amount-${e.id}"><strong>${fmt(e.amount)}</strong></td>
-      <td id="date-${e.id}">${fmtDate(e.date_received)}</td>
+      <td>${e.name}</td>
+      <td>${e.email||'-'}</td>
+      <td><strong>${fmt(e.amount)}</strong></td>
+      <td>${fmtDate(e.date_received)}</td>
       <td>${statusPill}</td>
-      <td id="notes-${e.id}">${e.notes||'-'}</td>
+      <td>${e.notes||'-'}</td>
       <td style="display:${isAdmin?'':'none'};">
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="btn btn-primary btn-sm" onclick="editEntry(${e.id},'${e.name}','${e.email||''}',${e.amount},'${e.date_received}','${(e.notes||'').replace(/'/g,"\\'")}','${e.paid_status||'paid'}')">Edit</button>
+          <button class="btn btn-primary btn-sm" onclick="editEntry(${e.id})">Edit</button>
           ${isPaid
             ?`<button class="btn btn-gold btn-sm" onclick="togglePaid(${e.id},'pending')">Mark Pending</button>`
             :`<button class="btn btn-green btn-sm" onclick="togglePaid(${e.id},'paid')">Mark Paid</button>`
@@ -354,14 +354,16 @@ async function loadQuarterData(){
   });
 }
 
-function editEntry(id,name,email,amount,date,notes,paid_status){
-  document.getElementById('editId').value=id;
-  document.getElementById('editName').value=name;
-  document.getElementById('editEmail').value=email;
-  document.getElementById('editAmount').value=amount;
-  document.getElementById('editDate').value=date;
-  document.getElementById('editNotes').value=notes;
-  document.getElementById('editPaid').value=paid_status;
+async function editEntry(id){
+  const{data,error}=await sb.from('fifty_fifty').select('*').eq('id',id).single();
+  if(error||!data){alert('Could not load entry.');return;}
+  document.getElementById('editId').value=data.id;
+  document.getElementById('editName').value=data.name;
+  document.getElementById('editEmail').value=data.email||'';
+  document.getElementById('editAmount').value=data.amount;
+  document.getElementById('editDate').value=data.date_received;
+  document.getElementById('editNotes').value=data.notes||'';
+  document.getElementById('editPaid').value=data.paid_status||'paid';
   document.getElementById('editMsg').textContent='';
   document.getElementById('editModal').classList.add('on');
 }
